@@ -1,0 +1,45 @@
+name: Application checks
+on: [push, pull_request]
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: mobile
+          POSTGRES_PASSWORD: test-password
+          POSTGRES_DB: mobile_shop_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U mobile -d mobile_shop_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://mobile:test-password@localhost:5432/mobile_shop_test?schema=public
+      TEST_DATABASE_URL: postgresql://mobile:test-password@localhost:5432/mobile_shop_test?schema=public
+      E2E_DATABASE_URL: postgresql://mobile:test-password@localhost:5432/mobile_shop_test?schema=public
+      APP_URL: http://localhost:3000
+      DEMO_MODE: 'false'
+      PAYMENTS_LIVE_ENABLED: 'false'
+      RAZORPAY_KEY_ID: rzp_test_fixture
+      RAZORPAY_KEY_SECRET: fixture-secret
+      RAZORPAY_WEBHOOK_SECRET: fixture-webhook
+      TEST_RAZORPAY_API_URL: http://127.0.0.1:4060/v1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run db:generate && npm run db:migrate && npm run db:seed
+      - run: npm run typecheck && npm test
+      - run: npx playwright install --with-deps chromium
+      - run: npx tsx tests/fixtures/gateway.ts > gateway.log 2>&1 &
+      - run: npm run test:e2e
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-diagnostics
+          path: test-results/
