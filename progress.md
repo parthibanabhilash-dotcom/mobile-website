@@ -6,7 +6,7 @@ Workspace: `C:\Users\Admin\Desktop\E-Commerce`.
 
 ## Completed application
 
-- Next.js 16.3.8, React 19, TypeScript, Tailwind CSS, PostgreSQL 16, and Prisma 6.19.3 application with installed dependencies and lockfile.
+- Next.js 16.3.8, React 19, TypeScript, Tailwind CSS, MySQL 8.4, and Prisma 6.19.3 application with installed dependencies and lockfile.
 - Responsive premium storefront: requested homepage sections, sticky desktop/mobile header, debounced search, category/brand filters, sorting/pagination, product cards/quick view, gallery/zoom, valid variants, wishlist, four-product comparison, persistent cart drawer/page.
 - Email/password registration, verification/recovery, secure database sessions, customer/admin authorization, profile, addresses, order/payment history, timelines, and delivered-purchase reviews.
 - Five-step checkout, authoritative paise totals/shipping/inventory, purchased snapshots, transactional 15-minute reservations, expiry cleanup, late-capture conflict handling, and concurrency protection.
@@ -56,7 +56,7 @@ The homepage/catalog target of 90 remains unmet. JavaScript hydration/execution 
 ## Local environment and continuation
 
 - Portable Node: `.tools/node-v22.23.3-win-x64`. In PowerShell use `npm.cmd` / `npx.cmd` to avoid execution-policy failures.
-- Portable PostgreSQL runtime/data/log: `.tools/pg-runtime/pgsql`, `.tools/pg-data`, `.tools/postgres.log`. Loopback port 55432, user `mobile`; development trust authentication is loopback-only. Main/test databases are migrated/seeded and use UTC.
+- Archived PostgreSQL source runtime/data/log: `.tools/pg-runtime/pgsql`, `.tools/pg-data`, `.tools/postgres.log`. Loopback port 55432, user `mobile`; development trust authentication is loopback-only. Main/test databases are migrated/seeded and use UTC.
 - Ignored `.env` holds the main local database configuration, random cron secret, and `PAYMENTS_LIVE_ENABLED=false`. Do not publish secrets. No real Razorpay or production SMTP/S3 credentials are configured.
 - Development emails are written to `.mail/` without SMTP. Production registration/email requires SMTP.
 - Start with `powershell -NoProfile -ExecutionPolicy Bypass -File .\start.ps1` and open http://localhost:3000. Use your own credentials with the documented explicit admin bootstrap command.
@@ -75,3 +75,16 @@ The homepage/catalog target of 90 remains unmet. JavaScript hydration/execution 
 - Production SMTP/S3 integrations, production deployment performance, manual screen-reader testing, approved brand/legal/catalog content, and licensed product photography remain launch prerequisites.
 - Live payments remain disabled until a separately authorized launch after provider and operational verification.
 - Approved exclusions remain: automated refunds, carrier integration, GST invoice automation, cash on delivery, international selling, marketing campaign sending.
+
+## MySQL migration — 6 October 2026
+
+- Active database is MySQL 8.4.11, mobile_shop on 127.0.0.1:3307. Random local credentials remain in ignored .env/.tools files. Original PostgreSQL database and schema/migrations are preserved.
+- Imported all existing rows and verified their complete contents: 2 users, 10 products, 22 variants, 16 product images, 2 cart items, 1 session, 2 auth tokens, 3 settings, 6 rate limits, plus categories/brands; no orders/payments existed at cutover. Existing account passwords are retained.
+- Converted schema, migrations/CHECK constraints, catalog filters, rate limits, India-day admin metrics, Docker, CI, startup scripts, and test setup to MySQL.
+- Added strict hosted TLS/public CA support and transactional db:copy for PostgreSQL/MySQL sources. Copy to a fresh dedicated local MySQL test database passed full-row verification. Repeated copy correctly refused the nonempty target without overwriting it. Private snapshot backups are ignored.
+- Validation: 26 unit/integration tests and all 10 browser tests passed on MySQL. Final build/typecheck pending below.
+- Updated setup.md and docs/MYSQL-VERCEL.md cover local setup, admin creation, Vercel configuration, migrations, hosted data copy, SMTP/storage and reservation scheduler. Hosted provider has not been chosen or provisioned; user replied they have not chosen one. No hosted connection can be claimed.
+- Fixed transient MySQL TEXT DEFAULT migration incompatibility by using appropriately sized VARCHAR fields, and startup readiness probe handling. No source data was removed. Prisma/Vitest deprecation warnings remain nonblocking.
+- Live payments stay disabled. Real Razorpay/SMTP/S3 integration checks and homepage/catalog performance target remain pending as documented above.
+
+Final MySQL validation: production build PASS; standalone typecheck PASS. Hosted MySQL remains unconfigured. Current migration changes are local and have not yet been pushed to GitHub.

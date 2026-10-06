@@ -75,9 +75,10 @@ export function checkOrigin(request: Request) {
 export async function rateLimit(key: string, limit = 10, seconds = 900) {
   const now = new Date();
   const expiresAt = new Date(Date.now() + seconds * 1000);
-  const result = await db.$queryRaw<
-    { count: number }[]
-  >`INSERT INTO "RateLimit" ("key", "count", "expiresAt") VALUES (${key}, 1, ${expiresAt}) ON CONFLICT ("key") DO UPDATE SET "count" = CASE WHEN "RateLimit"."expiresAt" < ${now} THEN 1 ELSE "RateLimit"."count" + 1 END, "expiresAt" = CASE WHEN "RateLimit"."expiresAt" < ${now} THEN ${expiresAt} ELSE "RateLimit"."expiresAt" END RETURNING "count"`;
-  if (result[0].count > limit)
-    throw new HttpError(429, 'Too many attempts. Please try again later.');
+  const count = await db.$transaction(async (tx) => {
+    await tx.$executeRaw`INSERT INTO \`RateLimit\` (\`key\`, \`count\`, \`expiresAt\`) VALUES (${key}, 1, ${expiresAt}) ON DUPLICATE KEY UPDATE \`count\` = IF(\`expiresAt\` < ${now}, 1, \`count\` + 1), \`expiresAt\` = IF(\`expiresAt\` < ${now}, ${expiresAt}, \`expiresAt\`)`;
+    const result = await tx.rateLimit.findUniqueOrThrow({ where: { key } });
+    return result.count;
+  });
+  if (count > limit) throw new HttpError(429, 'Too many attempts. Please try again later.');
 }

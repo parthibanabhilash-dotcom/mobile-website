@@ -37,10 +37,10 @@ export async function dashboardMetrics() {
     }),
     db.$queryRaw<
       { count: bigint }[]
-    >`SELECT count(*) AS count FROM "Variant" WHERE "stock" - "reserved" <= ${config.lowStockThreshold}`,
+    >`SELECT count(*) AS count FROM \`Variant\` WHERE \`stock\` - \`reserved\` <= ${config.lowStockThreshold}`,
     db.$queryRaw<
       { day: string; revenue: bigint; orders: number; sales: bigint }[]
-    >`SELECT to_char((o."createdAt" AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Kolkata','YYYY-MM-DD') AS day, SUM(CASE WHEN o."paymentStatus" = 'PAID' THEN o."total" - o."refundAmount" ELSE 0 END) AS revenue, COUNT(*)::int AS orders, SUM(CASE WHEN o."paymentStatus" = 'PAID' THEN COALESCE((SELECT SUM(i."quantity") FROM "OrderItem" i WHERE i."orderId" = o."id"),0) ELSE 0 END) AS sales FROM "Order" o WHERE o."createdAt" >= ${start} GROUP BY day ORDER BY day`,
+    >`SELECT DATE_FORMAT(DATE_ADD(o.\`createdAt\`, INTERVAL 330 MINUTE), '%Y-%m-%d') AS day, SUM(CASE WHEN o.\`paymentStatus\` = 'PAID' THEN o.\`total\` - o.\`refundAmount\` ELSE 0 END) AS revenue, COUNT(*) AS orders, SUM(CASE WHEN o.\`paymentStatus\` = 'PAID' THEN COALESCE((SELECT SUM(i.\`quantity\`) FROM \`OrderItem\` i WHERE i.\`orderId\` = o.\`id\`),0) ELSE 0 END) AS sales FROM \`Order\` o WHERE o.\`createdAt\` >= ${start} GROUP BY day ORDER BY day`,
     db.payment.groupBy({ by: ['method'], where: { status: 'CAPTURED' }, _count: true }),
     db.orderItem.groupBy({
       by: ['title'],
@@ -58,7 +58,12 @@ export async function dashboardMetrics() {
     pending,
     revenue: (revenue._sum.total || 0) - (revenue._sum.refundAmount || 0),
     lowStock: Number(lowStock[0].count),
-    trends: trends.map((t) => ({ ...t, revenue: Number(t.revenue) / 100, sales: Number(t.sales) })),
+    trends: trends.map((t) => ({
+      ...t,
+      orders: Number(t.orders),
+      revenue: Number(t.revenue) / 100,
+      sales: Number(t.sales),
+    })),
     paymentMethods: methods.map((m) => ({ name: m.method, value: m._count })),
     topProducts: topProducts.map((p) => ({ name: p.title, units: p._sum.quantity || 0 })),
   };

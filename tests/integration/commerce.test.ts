@@ -11,7 +11,7 @@ let users: string[] = [],
   variantId = '',
   productId = '';
 let remote = 0;
-describe.skipIf(!enabled)('PostgreSQL transaction and gateway integration', () => {
+describe.skipIf(!enabled)('MySQL transaction and gateway integration', () => {
   beforeAll(async () => {
     if (!new URL(process.env.TEST_DATABASE_URL!).pathname.includes('_test'))
       throw new Error('Use a dedicated database with _test in its name.');

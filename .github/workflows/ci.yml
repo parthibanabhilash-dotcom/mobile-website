@@ -4,20 +4,21 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     services:
-      postgres:
-        image: postgres:16
+      mysql:
+        image: mysql:8.4
         env:
-          POSTGRES_USER: mobile
-          POSTGRES_PASSWORD: test-password
-          POSTGRES_DB: mobile_shop_test
-        ports: ['5432:5432']
+          MYSQL_USER: mobile
+          MYSQL_PASSWORD: test-password
+          MYSQL_DATABASE: mobile_shop_test
+          MYSQL_ROOT_PASSWORD: root-test-password
+        ports: ['3306:3306']
         options: >-
-          --health-cmd "pg_isready -U mobile -d mobile_shop_test"
+          --health-cmd "mysqladmin ping -h 127.0.0.1 --silent"
           --health-interval 5s --health-timeout 5s --health-retries 10
     env:
-      DATABASE_URL: postgresql://mobile:test-password@localhost:5432/mobile_shop_test?schema=public
-      TEST_DATABASE_URL: postgresql://mobile:test-password@localhost:5432/mobile_shop_test?schema=public
-      E2E_DATABASE_URL: postgresql://mobile:test-password@localhost:5432/mobile_shop_test?schema=public
+      DATABASE_URL: mysql://mobile:test-password@127.0.0.1:3306/mobile_shop_test?connection_limit=5
+      TEST_DATABASE_URL: mysql://mobile:test-password@127.0.0.1:3306/mobile_shop_test?connection_limit=5
+      E2E_DATABASE_URL: mysql://mobile:test-password@127.0.0.1:3306/mobile_shop_test?connection_limit=5
       APP_URL: http://localhost:3000
       DEMO_MODE: 'false'
       PAYMENTS_LIVE_ENABLED: 'false'

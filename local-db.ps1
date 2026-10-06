@@ -1,19 +1,15 @@
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
-$pgControl = Join-Path $PSScriptRoot '.tools/pg-runtime/pgsql/bin/pg_ctl.exe'
-$pgData = Join-Path $PSScriptRoot '.tools/pg-data'
-if (-not (Test-Path -LiteralPath $pgControl) -or -not (Test-Path -LiteralPath $pgData)) {
-    throw 'This workspace does not have the portable PostgreSQL installation. Use docker compose up -d, as described in README.md.'
+$mysqlConfig = Join-Path $PSScriptRoot '.tools/mysql.ini'
+$mysqlRuntime = Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot '.tools/mysql-runtime') -Directory -Filter 'mysql-*-winx64' -ErrorAction SilentlyContinue | Select-Object -First 1
+if (-not $mysqlRuntime -or -not (Test-Path -LiteralPath $mysqlConfig)) { throw 'Portable MySQL is not configured. Use the Docker MySQL setup in setup.md.' }
+function Test-LocalMysql {
+    $client = New-Object Net.Sockets.TcpClient
+    try { $client.Connect('127.0.0.1', 3307); return $client.Connected } catch { return $false } finally { $client.Dispose() }
 }
-$pgReady = Join-Path $PSScriptRoot '.tools/pg-runtime/pgsql/bin/pg_isready.exe'
-& $pgReady -h 127.0.0.1 -p 55432 -U mobile -d mobile_shop -q
-if ($LASTEXITCODE -ne 0) {
-    $pgLog = Join-Path $PSScriptRoot '.tools/postgres.log'
-    # Start-Process -Wait also waits for the PostgreSQL server child, which stays running.
-    # Wait for pg_ctl itself instead; its -w flag already waits for database readiness.
-    $process = Start-Process -FilePath $pgControl -ArgumentList @('start', '-D', ('"' + $pgData + '"'), '-l', ('"' + $pgLog + '"'), '-o', '"-h 127.0.0.1 -p 55432"', '-w') -WindowStyle Hidden -PassThru
-    if (-not $process.WaitForExit(90000)) { throw 'PostgreSQL startup timed out. See .tools/postgres.log.' }
-    $process.Refresh()
-    if ($process.ExitCode -ne 0) { throw 'PostgreSQL did not start. See .tools/postgres.log.' }
+if (-not (Test-LocalMysql)) {
+    Start-Process -FilePath (Join-Path $mysqlRuntime.FullName 'bin/mysqld.exe') -ArgumentList ('--defaults-file="' + $mysqlConfig + '"') -WindowStyle Hidden
+    for ($i=0; $i -lt 40; $i++) { if (Test-LocalMysql) { break }; Start-Sleep -Milliseconds 500 }
+    if (-not (Test-LocalMysql)) { throw 'MySQL startup timed out. See .tools/mysql.log.' }
 }
-Write-Host 'Local PostgreSQL is available on 127.0.0.1:55432.'
+Write-Host 'Local MySQL is available on 127.0.0.1:3307.'

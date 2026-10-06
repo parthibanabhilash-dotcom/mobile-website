@@ -4,7 +4,7 @@ Updated 6 October 2026. This record describes local verification, not live-payme
 
 ## Automated checks
 
-- 19 unit and PostgreSQL integration tests passed against the isolated `mobile_shop_test` database. Coverage includes paise precision, shipping boundaries, variant validation, signatures, access/origin rules, inventory concurrency, reservation expiry, late capture conflicts, duplicate captures, gateway failures, fulfilment transitions, cancellation inventory restoration, and manual refund limits/idempotency.
+- 26 unit and MySQL integration tests passed against the isolated `mobile_shop_test` database. Coverage includes paise precision, shipping boundaries, variant validation, signatures, access/origin rules, inventory concurrency, reservation expiry, late capture conflicts, duplicate captures, gateway failures, fulfilment transitions, cancellation inventory restoration, and manual refund limits/idempotency.
 - Nine storefront browser checks passed: search, wishlist, comparison, persistent cart, valid variants, stable catalog pagination, keyboard focus, reduced motion, and responsive layouts at 360, 768, 1024, and 1440 pixels. Axe found no serious or critical violations on the tested homepage.
 - The expanded full-stack browser journey passed after checkout and admin request-race fixes. It exercises registration/email verification, guest-cart preservation, saved addresses, dismissal and failed-payment retries without recreating an order, rejected invalid signatures and mismatched amounts, authorized payments remaining pending, delayed capture, reconciliation after refresh, duplicate/out-of-order signed webhooks, ownership/role checks, fulfilment through delivery, verified reviews, returns, manual refund recording, product creation/image upload, and password recovery/session invalidation.
 - Final standalone `next typegen && tsc --noEmit`, production compilation/route generation, and source/document formatting checks passed after all fixes.
@@ -44,6 +44,10 @@ The requested performance score of at least 90 must be assessed from measured re
 
 ## Launch requirements
 
-Follow the configuration and deployment instructions in [README](../README.md). Supply production PostgreSQL, SMTP, object storage, HTTPS/public webhooks, scheduled reservation cleanup, real catalog content and imagery, branding, support/legal policies, and explicit administrator bootstrap. Keep live payments disabled until a separate authorized launch and provider verification.
+Follow the configuration and deployment instructions in [README](../README.md). Supply production MySQL, SMTP, object storage, HTTPS/public webhooks, scheduled reservation cleanup, real catalog content and imagery, branding, support/legal policies, and explicit administrator bootstrap. Keep live payments disabled until a separate authorized launch and provider verification.
 
 Non-blocking tooling warnings remain for Prisma 6's package.json configuration and Vitest's future native configuration loading. They do not prevent current tests or builds.
+
+## MySQL conversion (6 October 2026)
+
+Migrated the active application to MySQL with enforced CHECK constraints, case-insensitive searches, transactional rate limits, India-day dashboard queries, CI/Docker changes, strict hosted TLS, and a row-verified PostgreSQL import. The local import preserved 2 users, 10 products, 22 variants, 16 images, 2 cart items, 1 session, 2 auth tokens, 3 settings, and 6 rate-limit records; no orders or payments existed at cutover. The original PostgreSQL source and ignored snapshot backup remain intact. Hosted MySQL has not been provisioned because no provider/account credentials were supplied. All 26 unit/integration tests and all 10 browser tests passed against MySQL. MySQL-to-MySQL copying also passed full-row verification; a repeat import correctly refused the nonempty target. Production build and final typecheck results are recorded in progress.md. Hosted TLS configuration is supported but has not been exercised against a real provider.

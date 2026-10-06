@@ -45,17 +45,14 @@ export async function queryCatalog(params: URLSearchParams) {
   if (stock || offers) {
     const rows = await db.$queryRaw<
       { productId: string }[]
-    >`SELECT DISTINCT "productId" FROM "Variant" WHERE (${!stock} OR "stock" - "reserved" > 0) AND (${!offers} OR "price" < "originalPrice") AND "price" <= ${max} AND (${!ram} OR "ram" = ${ram || ''}) AND (${!storage} OR "storage" = ${storage || ''})`;
+    >`SELECT DISTINCT \`productId\` FROM \`Variant\` WHERE (${!stock} OR \`stock\` - \`reserved\` > 0) AND (${!offers} OR \`price\` < \`originalPrice\`) AND \`price\` <= ${max} AND (${!ram} OR \`ram\` = ${ram || ''}) AND (${!storage} OR \`storage\` = ${storage || ''})`;
     ids = rows.map((r) => r.productId);
   }
   const where: Prisma.ProductWhereInput = {
     status: 'ACTIVE',
     ...(q
       ? {
-          OR: [
-            { title: { contains: q, mode: 'insensitive' } },
-            { brand: { name: { contains: q, mode: 'insensitive' } } },
-          ],
+          OR: [{ title: { contains: q } }, { brand: { name: { contains: q } } }],
         }
       : {}),
     ...(category

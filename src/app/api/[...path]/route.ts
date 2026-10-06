@@ -401,7 +401,7 @@ async function handler(req: Request, context: Context) {
         stock = url.searchParams.get('stock');
       const page = Math.max(1, Math.floor(Number(url.searchParams.get('page')) || 1));
       const where = {
-        ...(q ? { title: { contains: q, mode: 'insensitive' as const } } : {}),
+        ...(q ? { title: { contains: q } } : {}),
         ...(category ? { category: { name: category } } : {}),
         ...(brand ? { brand: { name: brand } } : {}),
         ...(status ? { status } : {}),
@@ -414,14 +414,14 @@ async function handler(req: Request, context: Context) {
           stock === 'out'
             ? await db.$queryRaw<
                 { productId: string }[]
-              >`SELECT DISTINCT "productId" FROM "Variant" WHERE "stock" - "reserved" <= 0`
+              >`SELECT DISTINCT \`productId\` FROM \`Variant\` WHERE \`stock\` - \`reserved\` <= 0`
             : stock === 'low'
               ? await db.$queryRaw<
                   { productId: string }[]
-                >`SELECT DISTINCT "productId" FROM "Variant" WHERE "stock" - "reserved" <= ${limit}`
+                >`SELECT DISTINCT \`productId\` FROM \`Variant\` WHERE \`stock\` - \`reserved\` <= ${limit}`
               : await db.$queryRaw<
                   { productId: string }[]
-                >`SELECT DISTINCT "productId" FROM "Variant" WHERE "stock" - "reserved" > 0`;
+                >`SELECT DISTINCT \`productId\` FROM \`Variant\` WHERE \`stock\` - \`reserved\` > 0`;
         stockIds = rows.map((r) => r.productId);
       }
       const filtered = { ...where, ...(stockIds ? { id: { in: stockIds } } : {}) };
@@ -496,7 +496,7 @@ async function handler(req: Request, context: Context) {
       const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
       const where = {
         ...(status ? { status } : {}),
-        ...(q ? { number: { contains: q, mode: 'insensitive' as const } } : {}),
+        ...(q ? { number: { contains: q } } : {}),
       };
       const [orders, total] = await Promise.all([
         db.order.findMany({

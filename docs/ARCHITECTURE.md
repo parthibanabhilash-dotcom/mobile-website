@@ -1,6 +1,6 @@
 # Application contracts
 
-All money values returned by the API are integer **paise**. The display helper formats INR. Accounts are authenticated with a random HttpOnly cookie whose SHA-256 digest is stored in PostgreSQL. Mutations require the exact `APP_URL` origin, except separately authenticated Razorpay webhooks and cron calls. Responses use JSON; errors use `{ "error": "message" }` with an appropriate HTTP status.
+All money values returned by the API are integer **paise**. The display helper formats INR. Accounts are authenticated with a random HttpOnly cookie whose SHA-256 digest is stored in MySQL. Mutations require the exact `APP_URL` origin, except separately authenticated Razorpay webhooks and cron calls. Responses use JSON; errors use `{ "error": "message" }` with an appropriate HTTP status.
 
 ## Storefront and account API
 
@@ -53,11 +53,11 @@ All `/api/admin/*` endpoints require an authenticated `ADMIN` user. UI visibilit
 | POST       | `/api/admin/orders/refund` | `{id,reference,amount}`; records a separately processed refund for a paid cancelled/returned order.                                                                 |
 | GET / PUT  | `/api/admin/settings`      | `{freeShippingThreshold,shippingFee,lowStockThreshold}`.                                                                                                            |
 
-Search uses PostgreSQL trigram indexes, catalog filters use indexed relation/variant fields, and stock-related queries are parameterized. Serializable transaction conflicts are retried with bounded attempts. Database constraints enforce inventory, price, quantity, status, and total invariants.
+MySQL utf8mb4_unicode_ci collation supplies case-insensitive substring search. Catalog filters use indexed relation/variant fields; stock predicates are parameterized. Full-text indexes are available, while substring searches can scan matching active rows. Dashboard dates use UTC plus the fixed India offset, and rate-limit upserts hold a transaction row lock. Serializable transaction conflicts are retried with bounded attempts. Database constraints enforce inventory, price, quantity, status, and total invariants.
 
 ## Operational boundaries
 
-- Production requires PostgreSQL, SMTP, HTTPS, S3-compatible object storage, a reservation cleanup scheduler, and public Razorpay webhooks.
+- Production requires MySQL, SMTP, HTTPS, S3-compatible object storage, a reservation cleanup scheduler, and public Razorpay webhooks.
 - Payment keys are test-only by default. Production code ignores the loopback fixture gateway environment variable.
 - Order email failures are logged after committing verified payment; an email outage never rolls back a legitimate payment.
 - Demonstration imagery, catalog specifications, legal text, support contacts, and promotional copy need business approval and replacement before launch.

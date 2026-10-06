@@ -1,0 +1,16 @@
+ALTER TABLE `Variant` ADD CONSTRAINT `Variant_inventory_valid` CHECK (`stock` >= 0 AND `reserved` >= 0 AND `stock` >= `reserved`);
+ALTER TABLE `Variant` ADD CONSTRAINT `Variant_prices_valid` CHECK (`price` > 0 AND `originalPrice` >= `price`);
+ALTER TABLE `CartItem` ADD CONSTRAINT `Cart_quantity_valid` CHECK (`quantity` BETWEEN 1 AND 10);
+ALTER TABLE `OrderItem` ADD CONSTRAINT `OrderItem_valid` CHECK (`quantity` BETWEEN 1 AND 10 AND `price` > 0);
+ALTER TABLE `Reservation` ADD CONSTRAINT `Reservation_valid` CHECK (`quantity` BETWEEN 1 AND 10 AND `status` IN ('ACTIVE','CONSUMED','RELEASED'));
+ALTER TABLE `Review` ADD CONSTRAINT `Review_rating_valid` CHECK (`rating` BETWEEN 1 AND 5);
+ALTER TABLE `Order` ADD CONSTRAINT `Order_totals_valid` CHECK (`subtotal` >= 0 AND `shipping` >= 0 AND `total` = `subtotal` + `shipping`);
+ALTER TABLE `Order` ADD CONSTRAINT `Order_refund_valid` CHECK (`refundAmount` >= 0 AND `refundAmount` <= `total`);
+ALTER TABLE `Order` ADD CONSTRAINT `Order_status_valid` CHECK (`status` IN ('PENDING','CONFIRMED','PROCESSING','PACKED','SHIPPED','OUT_FOR_DELIVERY','DELIVERED','CANCELLED','RETURNED'));
+ALTER TABLE `Order` ADD CONSTRAINT `Payment_status_valid` CHECK (`paymentStatus` IN ('PENDING','PAID','FAILED','EXPIRED'));
+ALTER TABLE `User` ADD CONSTRAINT `User_role_valid` CHECK (`role` IN ('CUSTOMER','ADMIN'));
+ALTER TABLE `AuthToken` ADD CONSTRAINT `AuthToken_type_valid` CHECK (`type` IN ('VERIFY','RESET'));
+ALTER TABLE `Setting` ADD CONSTRAINT `Setting_nonnegative` CHECK (`value` >= 0);
+CREATE FULLTEXT INDEX `Product_title_search` ON `Product` (`title`);
+CREATE FULLTEXT INDEX `Brand_name_search` ON `Brand` (`name`);
+CREATE FULLTEXT INDEX `Order_number_search` ON `Order` (`number`);
