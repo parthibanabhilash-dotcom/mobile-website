@@ -87,4 +87,5 @@ The homepage/catalog target of 90 remains unmet. JavaScript hydration/execution 
 - Fixed transient MySQL TEXT DEFAULT migration incompatibility by using appropriately sized VARCHAR fields, and startup readiness probe handling. No source data was removed. Prisma/Vitest deprecation warnings remain nonblocking.
 - Live payments stay disabled. Real Razorpay/SMTP/S3 integration checks and homepage/catalog performance target remain pending as documented above.
 
-Final MySQL validation: production build PASS; standalone typecheck PASS. Hosted MySQL remains unconfigured. Current migration changes are local and have not yet been pushed to GitHub.
+Final MySQL validation: production build PASS; standalone typecheck PASS. Hosted MySQL remains unconfigured. MySQL migration changes are committed for GitHub publication as requested.
+
