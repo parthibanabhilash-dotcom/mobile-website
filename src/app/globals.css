@@ -487,6 +487,7 @@ textarea:focus-visible {
 }
 .search-suggestions {
   position: absolute;
+  z-index: 45;
   top: calc(100% + 10px);
   left: 0;
   right: 0;
