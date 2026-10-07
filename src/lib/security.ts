@@ -72,7 +72,11 @@ export function checkOrigin(request: Request) {
   const allowed = new Set([new URL(process.env.APP_URL || 'http://localhost:3000').origin]);
   // Trust deployment configuration, never client-supplied Host/forwarding headers.
   if (process.env.VERCEL === '1') {
-    for (const host of [process.env.VERCEL_PROJECT_PRODUCTION_URL, process.env.VERCEL_URL]) {
+    for (const host of [
+      process.env.VERCEL_PROJECT_PRODUCTION_URL,
+      process.env.VERCEL_URL,
+      process.env.VERCEL_BRANCH_URL,
+    ]) {
       if (host && /^[a-z0-9.-]+$/i.test(host)) allowed.add(new URL(`https://${host}`).origin);
     }
   }

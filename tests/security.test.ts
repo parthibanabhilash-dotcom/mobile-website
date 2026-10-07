@@ -14,9 +14,11 @@ describe('authentication and payment signatures', () => {
     vi.stubEnv('VERCEL', '1');
     vi.stubEnv('VERCEL_PROJECT_PRODUCTION_URL', 'mobile-website-film9.vercel.app');
     vi.stubEnv('VERCEL_URL', 'mobile-website-deployment.vercel.app');
+    vi.stubEnv('VERCEL_BRANCH_URL', 'mobile-website-git-main-film9.vercel.app');
     for (const host of [
       'mobile-website-film9.vercel.app',
       'mobile-website-deployment.vercel.app',
+      'mobile-website-git-main-film9.vercel.app',
     ]) {
       expect(() =>
         checkOrigin(
@@ -28,6 +30,7 @@ describe('authentication and payment signatures', () => {
     }
     for (const origin of [
       'https://other-project.vercel.app',
+      'https://mobile-website-git-other-film9.vercel.app',
       'http://mobile-website-film9.vercel.app',
       'null',
     ]) {

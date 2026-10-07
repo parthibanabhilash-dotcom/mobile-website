@@ -1,6 +1,6 @@
 # Application contracts
 
-All money values returned by the API are integer **paise**. The display helper formats INR. Accounts are authenticated with a random HttpOnly cookie whose SHA-256 digest is stored in MySQL. Mutations require the exact `APP_URL` origin, except separately authenticated Razorpay webhooks and cron calls. Responses use JSON; errors use `{ "error": "message" }` with an appropriate HTTP status.
+All money values returned by the API are integer **paise**. The display helper formats INR. Accounts are authenticated with a random HttpOnly cookie whose SHA-256 digest is stored in MySQL. Mutations require the exact `APP_URL` origin or, on Vercel, an exact domain from `VERCEL_PROJECT_PRODUCTION_URL`, `VERCEL_URL`, or `VERCEL_BRANCH_URL`, except separately authenticated Razorpay webhooks and cron calls. Client-supplied Host and forwarding headers do not extend this list. Responses use JSON; errors use `{ "error": "message" }` with an appropriate HTTP status.
 
 ## Storefront and account API
 
