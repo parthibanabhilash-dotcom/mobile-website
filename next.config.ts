@@ -5,6 +5,15 @@ const config: NextConfig = {
     remotePatterns: [
       { protocol: 'https', hostname: 'images.unsplash.com' },
       { protocol: 'https', hostname: 'store.storeimages.cdn-apple.com' },
+      ...(process.env.CLOUDINARY_CLOUD_NAME
+        ? [
+            {
+              protocol: 'https' as const,
+              hostname: 'res.cloudinary.com',
+              pathname: `/${process.env.CLOUDINARY_CLOUD_NAME.trim()}/image/upload/**`,
+            },
+          ]
+        : []),
       ...(process.env.STORAGE_PUBLIC_URL
         ? [
             {

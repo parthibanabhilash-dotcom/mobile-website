@@ -4,6 +4,7 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { requireUser, checkOrigin, HttpError, rateLimit } from '@/lib/security';
+import { uploadCloudinary } from '@/lib/cloudinary';
 export async function POST(req: Request) {
   try {
     checkOrigin(req);
@@ -24,7 +25,13 @@ export async function POST(req: Request) {
     const key = `products/${randomUUID()}.${ext}`;
     const contentType = png ? 'image/png' : jpg ? 'image/jpeg' : 'image/webp';
     let url: string;
-    if (process.env.STORAGE_BUCKET) {
+    if (
+      process.env.CLOUDINARY_CLOUD_NAME ||
+      process.env.CLOUDINARY_API_KEY ||
+      process.env.CLOUDINARY_API_SECRET
+    ) {
+      url = await uploadCloudinary(file);
+    } else if (process.env.STORAGE_BUCKET) {
       if (!process.env.STORAGE_PUBLIC_URL) throw new Error('STORAGE_PUBLIC_URL required');
       const client = new S3Client({
         region: process.env.STORAGE_REGION || 'ap-south-1',
@@ -48,7 +55,10 @@ export async function POST(req: Request) {
       url = `${process.env.STORAGE_PUBLIC_URL.replace(/\/$/, '')}/${key}`;
     } else {
       if (process.env.NODE_ENV === 'production')
-        throw new HttpError(503, 'Object storage is required for production uploads.');
+        throw new HttpError(
+          503,
+          'Configure Cloudinary or S3 storage in Vercel before uploading images.',
+        );
       const filename = key.split('/')[1];
       await mkdir(path.join(process.cwd(), 'public', 'uploads'), { recursive: true });
       await writeFile(path.join(process.cwd(), 'public', 'uploads', filename), bytes);

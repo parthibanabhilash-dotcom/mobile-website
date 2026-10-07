@@ -279,17 +279,16 @@ export function ProductEditor({ id }: { id?: string }) {
     setError('');
     setUpload(0);
     setUploading(true);
-    let urls: string[] = [];
     try {
-      for (let i = 0; i < files.length; i++) {
+      for (let i = 0; i < selected.length; i++) {
         const form = new FormData();
-        form.set('file', files[i]);
+        form.set('file', selected[i]);
         const url = await new Promise<string>((resolve, reject) => {
           const xhr = new XMLHttpRequest();
           xhr.open('POST', '/api/admin/upload');
           xhr.upload.onprogress = (e) => {
             if (e.lengthComputable)
-              setUpload(Math.round(((i + e.loaded / e.total) / files.length) * 100));
+              setUpload(Math.round(((i + e.loaded / e.total) / selected.length) * 100));
           };
           xhr.onload = () => {
             try {
@@ -302,13 +301,11 @@ export function ProductEditor({ id }: { id?: string }) {
           xhr.onerror = () => reject(new Error('Upload failed'));
           xhr.send(form);
         });
-        urls.push(url);
         setDraft((d) => ({ ...d, images: [...d.images, url] }));
       }
       store.notify('Images uploaded');
     } catch (e) {
       setError((e as Error).message);
-      if (urls.length) setDraft((d) => ({ ...d, images: [...d.images, ...urls].slice(0, 10) }));
     } finally {
       setUploading(false);
       setUpload(0);
@@ -627,6 +624,7 @@ export function ProductEditor({ id }: { id?: string }) {
               disabled={uploading}
               onChange={(e) => {
                 if (e.target.files) uploadFiles(e.target.files);
+                e.target.value = '';
               }}
             />
             {uploading && (
