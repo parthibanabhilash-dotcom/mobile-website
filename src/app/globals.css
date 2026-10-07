@@ -1578,7 +1578,8 @@ textarea:focus-visible {
 }
 .footer-grid {
   display: grid;
-  grid-template-columns: 1.3fr 1fr 1fr 1fr 1.1fr;
+  grid-template-columns: 1.25fr 0.85fr 0.95fr 1.35fr 0.9fr;
+  align-items: start;
   gap: 35px;
 }
 .footer-brand .logo {
@@ -1623,8 +1624,25 @@ textarea:focus-visible {
   color: var(--blue);
 }
 .footer-assurance {
-  border-left: 1px solid var(--line);
-  padding-left: 28px;
+  grid-column: 1 / -1;
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.footer-grid > div:not(.footer-brand):not(.footer-assurance) > p {
+  font-size: 12px;
+  line-height: 1.7;
+  color: #626974;
+  margin-bottom: 12px;
+}
+.footer-grid > div {
+  min-width: 0;
+}
+.footer-grid a {
+  overflow-wrap: anywhere;
 }
 .footer-assurance > svg {
   color: #556681;
@@ -4405,6 +4423,9 @@ textarea:focus-visible {
   .footer-grid {
     gap: 25px;
     grid-template-columns: 1.2fr 1fr 1fr 1fr;
+  }
+  .footer-grid > .footer-brand {
+    grid-column: 1 / -1;
   }
   .footer-assurance {
     display: none;

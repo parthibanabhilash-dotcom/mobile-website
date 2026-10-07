@@ -61,6 +61,8 @@ export function Footer() {
           <Link prefetch={false} href="/contact">
             Contact details
           </Link>
+        </div>
+        <div>
           <h2>Mobile Shop</h2>
           <Link prefetch={false} href="/about">
             Our story
