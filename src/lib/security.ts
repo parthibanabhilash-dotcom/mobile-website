@@ -69,8 +69,14 @@ export async function createSession(userId: string) {
 }
 export function checkOrigin(request: Request) {
   const origin = request.headers.get('origin');
-  const expected = new URL(process.env.APP_URL || 'http://localhost:3000').origin;
-  if (!origin || origin !== expected) throw new HttpError(403, 'Invalid request origin.');
+  const allowed = new Set([new URL(process.env.APP_URL || 'http://localhost:3000').origin]);
+  // Trust deployment configuration, never client-supplied Host/forwarding headers.
+  if (process.env.VERCEL === '1') {
+    for (const host of [process.env.VERCEL_PROJECT_PRODUCTION_URL, process.env.VERCEL_URL]) {
+      if (host && /^[a-z0-9.-]+$/i.test(host)) allowed.add(new URL(`https://${host}`).origin);
+    }
+  }
+  if (!origin || !allowed.has(origin)) throw new HttpError(403, 'Invalid request origin.');
 }
 export async function rateLimit(key: string, limit = 10, seconds = 900) {
   const now = new Date();

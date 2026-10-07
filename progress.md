@@ -98,3 +98,7 @@ Aiven MySQL 8.4.8 database defaultdb connected with certificate-verified TLS. Bo
 
 Registration now shows Name, Email ID, Password in that order, with a Create account button. After submission, a dedicated Check your email state hides the form, supports resend and returning to sign in. Email verification and existing backend auth remain intact; no SMS provider integration added. Standalone typecheck passed. A mocked mobile browser check passed three-field registration, verification state and two-field login; this check does not certify real email delivery. Full-stack test selectors updated to new labels. Signup changes are prepared for GitHub publication as requested; Vercel deployment remains to be verified. Live payments remain disabled.
 
+
+## Vercel origin fix — 7 October 2026
+
+Actual signup URL supplied by user is mobile-website-black-omega.vercel.app, while previous APP_URL advice used mobile-website-film9.vercel.app. Origin validation now accepts APP_URL plus exact trusted Vercel production/deployment domains when VERCEL=1; no wildcard, request-host or forwarding-header trust. Five security tests passed, including unrelated origins, spoofed headers and non-Vercel rejection. APP_URL must still match the chosen canonical domain for verification email links. Real production email delivery requires configured SMTP. Live payments disabled.
