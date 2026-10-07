@@ -89,3 +89,12 @@ The homepage/catalog target of 90 remains unmet. JavaScript hydration/execution 
 
 Final MySQL validation: production build PASS; standalone typecheck PASS. Hosted MySQL remains unconfigured. MySQL migration changes are committed for GitHub publication as requested.
 
+
+## Hosted MySQL connected — 6 October 2026
+
+Aiven MySQL 8.4.8 database defaultdb connected with certificate-verified TLS. Both application migrations applied successfully. Local-to-hosted db:copy passed complete row comparison, preserving 2 users, 10 products, 22 variants and the remaining local records. Private connection/CA configuration is in ignored .tools/hosted-mysql.env; never commit it. Local .env remains on local MySQL. Vercel environment configuration/deployment remains pending. Live payments disabled. Earlier statements that hosted MySQL was unconfigured describe the prior state and are superseded here.
+
+## Simplified customer signup — 7 October 2026
+
+Registration now shows Name, Email ID, Password in that order, with a Create account button. After submission, a dedicated Check your email state hides the form, supports resend and returning to sign in. Email verification and existing backend auth remain intact; no SMS provider integration added. Standalone typecheck passed. A mocked mobile browser check passed three-field registration, verification state and two-field login; this check does not certify real email delivery. Full-stack test selectors updated to new labels. Signup changes are prepared for GitHub publication as requested; Vercel deployment remains to be verified. Live payments remain disabled.
+

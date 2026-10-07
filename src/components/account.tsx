@@ -79,6 +79,7 @@ export function AuthForm({ onSuccess }: { onSuccess?: () => void }) {
     [password, setPassword] = useState(''),
     [busy, setBusy] = useState(false),
     [message, setMessage] = useState(''),
+    [awaitingVerification, setAwaitingVerification] = useState(false),
     [error, setError] = useState('');
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -93,6 +94,7 @@ export function AuthForm({ onSuccess }: { onSuccess?: () => void }) {
         store.notify('Welcome back. Your next upgrade awaits.');
       } else {
         setMessage(data.message);
+        if (mode === 'register') setAwaitingVerification(true);
         if (mode === 'verify' || mode === 'reset') setMode('login');
       }
     } catch (e) {
@@ -108,96 +110,133 @@ export function AuthForm({ onSuccess }: { onSuccess?: () => void }) {
       </span>
       <span className="eyebrow">YOUR WORLD OF TECH</span>
       <h1>
-        {mode === 'register'
-          ? 'Make yourself at home.'
-          : mode === 'forgot'
-            ? 'Let’s get you back in.'
-            : mode === 'verify'
-              ? 'One last step.'
-              : mode === 'reset'
-                ? 'A fresh start.'
-                : mode === 'resend'
-                  ? 'Check your inbox.'
-                  : 'Good to see you again.'}
+        {awaitingVerification
+          ? 'Check your email'
+          : mode === 'register'
+            ? 'Create account'
+            : mode === 'forgot'
+              ? 'Let’s get you back in.'
+              : mode === 'verify'
+                ? 'One last step.'
+                : mode === 'reset'
+                  ? 'A fresh start.'
+                  : mode === 'resend'
+                    ? 'Check your inbox.'
+                    : 'Good to see you again.'}
       </h1>
       <p>
-        {mode === 'register'
-          ? 'Create an account for a more personal shopping experience.'
-          : mode === 'verify'
-            ? 'Verify your email to unlock your account.'
-            : mode === 'reset'
-              ? 'Choose a new password for your account.'
-              : 'Your orders, favorites, and next upgrade. All in one place.'}
+        {awaitingVerification
+          ? `Open the verification link sent to ${email}. Then sign in to start shopping.`
+          : mode === 'register'
+            ? 'Enter your name, email ID and password.'
+            : mode === 'verify'
+              ? 'Verify your email to unlock your account.'
+              : mode === 'reset'
+                ? 'Choose a new password for your account.'
+                : 'Your orders, favorites, and next upgrade. All in one place.'}
       </p>
-      <form onSubmit={submit}>
-        {mode === 'register' && (
-          <label className="field">
-            Full name
-            <input
-              autoComplete="name"
-              required
-              minLength={2}
-              maxLength={100}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </label>
-        )}
-        {!['verify', 'reset'].includes(mode) && (
-          <label className="field">
-            Email address
-            <input
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </label>
-        )}
-        {['login', 'register', 'reset'].includes(mode) && (
-          <label className="field">
-            Password
-            <input
-              id="account-password"
-              aria-label="Password"
-              aria-describedby={mode === 'login' ? undefined : 'password-hint'}
-              type="password"
-              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-              required
-              minLength={mode === 'login' ? 1 : 10}
-              maxLength={128}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            {mode !== 'login' && <small id="password-hint">At least 10 characters.</small>}
-          </label>
-        )}
-        {error && (
-          <p className="form-error" role="alert">
-            {error}
-          </p>
-        )}
-        {message && (
-          <p className="form-success" role="status">
-            {message}
-          </p>
-        )}
-        <button className="button full" disabled={busy}>
-          {busy
-            ? 'Please wait…'
-            : mode === 'login'
-              ? 'Sign in'
-              : mode === 'register'
-                ? 'Create account'
-                : mode === 'verify'
-                  ? 'Verify email'
-                  : mode === 'reset'
-                    ? 'Update password'
-                    : 'Send email'}
-          <ArrowRight size={17} />
-        </button>
-      </form>
+      {awaitingVerification ? (
+        <>
+          {error && (
+            <p className="form-error" role="alert">
+              {error}
+            </p>
+          )}
+          {message && (
+            <p className="form-success" role="status">
+              {message}
+            </p>
+          )}
+          <button
+            className="button full"
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              setError('');
+              try {
+                const data = await api('auth/resend', { email });
+                setMessage(data.message);
+              } catch (e) {
+                setError((e as Error).message);
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            {busy ? 'Sending…' : 'Resend verification email'}
+          </button>
+        </>
+      ) : (
+        <form onSubmit={submit}>
+          {mode === 'register' && (
+            <label className="field">
+              Name
+              <input
+                autoComplete="name"
+                required
+                minLength={2}
+                maxLength={100}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </label>
+          )}
+          {!['verify', 'reset'].includes(mode) && (
+            <label className="field">
+              Email ID
+              <input
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </label>
+          )}
+          {['login', 'register', 'reset'].includes(mode) && (
+            <label className="field">
+              Password
+              <input
+                id="account-password"
+                aria-label="Password"
+                aria-describedby={mode === 'login' ? undefined : 'password-hint'}
+                type="password"
+                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                required
+                minLength={mode === 'login' ? 1 : 10}
+                maxLength={128}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              {mode !== 'login' && <small id="password-hint">At least 10 characters.</small>}
+            </label>
+          )}
+          {error && (
+            <p className="form-error" role="alert">
+              {error}
+            </p>
+          )}
+          {message && (
+            <p className="form-success" role="status">
+              {message}
+            </p>
+          )}
+          <button className="button full" disabled={busy}>
+            {busy
+              ? 'Please wait…'
+              : mode === 'login'
+                ? 'Sign in'
+                : mode === 'register'
+                  ? 'Create account'
+                  : mode === 'verify'
+                    ? 'Verify email'
+                    : mode === 'reset'
+                      ? 'Update password'
+                      : 'Send email'}
+            <ArrowRight size={17} />
+          </button>
+        </form>
+      )}
       <div className="auth-links">
         {mode === 'login' ? (
           <>
@@ -220,6 +259,8 @@ export function AuthForm({ onSuccess }: { onSuccess?: () => void }) {
             onClick={() => {
               setMode('login');
               setError('');
+              setMessage('');
+              setAwaitingVerification(false);
             }}
           >
             Back to sign in

@@ -70,8 +70,9 @@ test.describe('full-stack customer and admin journey', () => {
     await page.getByRole('button', { name: 'Save to wishlist' }).click();
     await page.goto('/checkout');
     await page.getByRole('button', { name: 'Create an account', exact: true }).click();
-    await page.getByLabel('Full name', { exact: true }).fill('Test Customer');
-    await page.getByLabel('Email address', { exact: true }).fill(email);
+    await expect(page.locator('.auth-card input')).toHaveCount(3);
+    await page.getByLabel('Name', { exact: true }).fill('Test Customer');
+    await page.getByLabel('Email ID', { exact: true }).fill(email);
     await page.getByLabel('Password', { exact: true }).fill(password);
     await page.getByRole('button', { name: 'Create account', exact: true }).click();
     await expect(page.getByRole('status').filter({ hasText: 'verification link' })).toBeVisible();
@@ -91,7 +92,7 @@ test.describe('full-stack customer and admin journey', () => {
       ).status(),
     ).toBe(200);
     await page.getByRole('button', { name: 'Back to sign in' }).click();
-    await page.getByLabel('Email address', { exact: true }).fill(email);
+    await page.getByLabel('Email ID', { exact: true }).fill(email);
     await page.getByLabel('Password', { exact: true }).fill(password);
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Where should it go?' })).toBeVisible();
@@ -276,7 +277,7 @@ test.describe('full-stack customer and admin journey', () => {
     const adminContext = await browser.newContext();
     const admin = await adminContext.newPage();
     await admin.goto(`${base}/admin`);
-    await admin.getByLabel('Email address', { exact: true }).fill(adminEmail);
+    await admin.getByLabel('Email ID', { exact: true }).fill(adminEmail);
     await admin.getByLabel('Password', { exact: true }).fill(password);
     await admin.getByRole('button', { name: 'Sign in', exact: true }).click();
     await expect(admin.getByRole('heading', { name: 'Store overview' })).toBeVisible();
