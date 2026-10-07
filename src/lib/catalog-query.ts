@@ -3,22 +3,28 @@ import { db, demoMode } from './db';
 import { demoProducts } from './catalog-data';
 import { productInclude, toProduct } from './catalog';
 export async function queryCatalog(params: URLSearchParams) {
-  const q = (params.get('q') || '').slice(0, 100),
+  const q = (params.get('q') || '').trim().slice(0, 100),
     category = params.get('category'),
     brand = params.get('brand'),
     ram = params.get('ram'),
     storage = params.get('storage'),
     collection = params.get('collection'),
     sort = params.get('sort') || 'featured';
-  const max = Math.max(100, Math.min(100000000, (Number(params.get('max')) || 150000) * 100));
+  const max =
+    params.get('suggest') === 'true'
+      ? 100000000
+      : Math.max(100, Math.min(100000000, (Number(params.get('max')) || 150000) * 100));
   const stock = params.get('inStock') === 'true',
     offers = params.get('offers') === 'true';
   const page = Math.max(1, Math.min(10000, Math.floor(Number(params.get('page')) || 1))),
-    take = 9;
+    take = params.get('suggest') === 'true' ? 5 : 9;
+  const terms = q.split(/\s+/).filter(Boolean).slice(0, 8);
   if (demoMode()) {
     let products = demoProducts.filter(
       (p) =>
-        (!q || `${p.title} ${p.brand} ${p.category}`.toLowerCase().includes(q.toLowerCase())) &&
+        terms.every((term) =>
+          `${p.title} ${p.brand} ${p.category}`.toLowerCase().includes(term.toLowerCase()),
+        ) &&
         (!category || p.category === category) &&
         (!brand || p.brand === brand) &&
         (collection !== 'accessories' || p.category !== 'Smartphones') &&
@@ -52,7 +58,13 @@ export async function queryCatalog(params: URLSearchParams) {
     status: 'ACTIVE',
     ...(q
       ? {
-          OR: [{ title: { contains: q } }, { brand: { name: { contains: q } } }],
+          AND: terms.map((term) => ({
+            OR: [
+              { title: { contains: term } },
+              { brand: { name: { contains: term } } },
+              { category: { name: { contains: term } } },
+            ],
+          })),
         }
       : {}),
     ...(category
@@ -83,7 +95,7 @@ export async function queryCatalog(params: URLSearchParams) {
       skip: (page - 1) * take,
       orderBy: [orderBy, { id: 'asc' }],
     }),
-    db.product.count({ where }),
+    params.get('suggest') === 'true' ? Promise.resolve(0) : db.product.count({ where }),
   ]);
   return { products: products.map(toProduct), total };
 }

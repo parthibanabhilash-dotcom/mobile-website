@@ -27,7 +27,7 @@ export function Shop({ initial }: { initial: { products: ShopProduct[]; total: n
   const offers = params.get('offers') === 'true',
     collection = params.get('collection');
   const firstQuery = useRef(true);
-  const filterKey = [category, brand, max, ram, storage, inStock, sort].join('|');
+  const filterKey = [query, category, brand, max, ram, storage, inStock, sort].join('|');
   const previousFilters = useRef(filterKey);
   useEffect(() => {
     setCategory(params.get('category') || '');

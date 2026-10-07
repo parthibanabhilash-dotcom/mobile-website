@@ -48,7 +48,7 @@ The command refuses to overwrite an existing account. Sign in at `/admin`. Custo
 ## Implemented journeys
 
 - Homepage: hero, categories, brands, collection tabs, offers, accessories, featured products, deal countdown, store assurances, labeled sample testimonials, newsletter, footer.
-- Shopping: instant debounced suggestions, server-side catalog filters/sorting/pagination, product gallery and zoom, valid variants, quick view, wishlist, four-product comparison, cart drawer and cart page.
+- Shopping: debounced multi-word search suggestions, server-side catalog filters/sorting/pagination, product gallery and zoom, valid variants, quick view, wishlist, cart drawer and cart page. Contact details are available at `/contact`; its address and hours are provisional. Comparison has been removed.
 - Accounts: email verification, password reset, profile settings, saved addresses, order timelines, wishlist, payment history, delivered-purchase reviews.
 - Checkout: login, address, summary, payment, confirmation. Server prices and stock are authoritative. Quantity is limited to ten per variant. Shipping is ₹99 and free **above** ₹5,000, configurable in admin; prices include tax.
 - Admin: live metrics and charts, searchable filtered tables, product/variant editing, image upload, inventory, SEO fields, order status changes, tracking, manual refund recording, shipping and stock settings.
@@ -113,7 +113,7 @@ npm run test:e2e
 npm run build
 ```
 
-Unit tests cover shipping boundaries, variants/input validation, order transitions, password hashing, origin protection, and gateway signatures. Browser tests cover browsing, wishlist, comparison, cart persistence, variant combinations, keyboard navigation, reduced motion, contrast, and horizontal overflow at 360/768/1024/1440 px.
+Unit tests cover shipping boundaries, search terms, variants/input validation, order transitions, password hashing, origin protection, and gateway signatures. Browser tests cover contact information, browsing, wishlist, cart persistence, comparison removal, variant combinations, keyboard navigation, reduced motion, contrast, and horizontal overflow at 360/768/1024/1440 px.
 
 For transaction integration tests, create a **dedicated disposable database with `_test` in its name**, apply migrations, set `TEST_DATABASE_URL` to its connection URL, and run `npm test`. Tests create and clean their own fixtures and verify concurrent final-unit reservations, duplicate captures, amount mismatches, failed gateway creation, expiry, late capture conflicts, and cancellation inventory restoration. Never point tests at production.
 

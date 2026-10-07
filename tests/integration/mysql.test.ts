@@ -84,6 +84,17 @@ describe.skipIf(!enabled)('MySQL query and enforcement compatibility', () => {
     ).rejects.toThrow();
     expect((await db.variant.findUniqueOrThrow({ where: { id: variantId } })).reserved).toBe(1);
   });
+  it('matches reordered search words across title, brand and category', async () => {
+    const { queryCatalog } = await import('../../src/lib/catalog-query');
+    const result = await queryCatalog(
+      new URLSearchParams({ q: `  MixedCASE   ${prefix.toUpperCase()} ` }),
+    );
+    expect(result.products.map((p) => p.id)).toEqual([productId]);
+    const missing = await queryCatalog(
+      new URLSearchParams({ q: `${prefix} definitelynotpresent` }),
+    );
+    expect(missing.products).toHaveLength(0);
+  });
   it('atomically limits concurrent requests and resets expired buckets', async () => {
     const { rateLimit } = await import('../../src/lib/security');
     const key = prefix + ':concurrent';

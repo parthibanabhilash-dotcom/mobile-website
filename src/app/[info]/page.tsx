@@ -23,7 +23,7 @@ export default async function Page({ params }: { params: Promise<{ info: string 
           <>
             <p>
               Mobile Shop brings smartphones and everyday electronics into a clean, considered
-              shopping experience. Find a favorite, compare your options, and follow your order from
+              shopping experience. Find a favorite, explore your options, and follow your order from
               checkout to delivery.
             </p>
             <div className="info-banner">
@@ -70,7 +70,7 @@ export default async function Page({ params }: { params: Promise<{ info: string 
               {
                 id: 'contact',
                 q: 'How do I contact support?',
-                a: 'The provisional support address is support@mobile-shop.local. A real support address and business contact details must be configured before the store launches.',
+                a: 'Email parthibanabhilash@gmail.com or visit our Contact us page for opening hours and provisional store details.',
               },
             ].map((item) => (
               <details key={item.id} id={item.id}>

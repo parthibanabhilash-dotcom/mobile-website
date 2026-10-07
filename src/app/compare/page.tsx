@@ -1,4 +1,4 @@
-import { SavedProducts } from '@/components/saved-products';
+import { redirect } from 'next/navigation';
 export default function Page() {
-  return <SavedProducts compare />;
+  redirect('/shop');
 }

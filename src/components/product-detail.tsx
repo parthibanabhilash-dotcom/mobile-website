@@ -12,7 +12,6 @@ import {
   ArrowRight,
   Truck,
   ShieldCheck,
-  GitCompareArrows,
   ZoomIn,
   ChevronDown,
 } from 'lucide-react';
@@ -217,12 +216,6 @@ export function ProductDetail({
             <button aria-pressed={store.wishlist.includes(p.id)} onClick={() => store.wish(p.id)}>
               <Heart size={17} fill={store.wishlist.includes(p.id) ? 'currentColor' : 'none'} />{' '}
               Save to wishlist
-            </button>
-            <button
-              aria-pressed={store.compare.includes(p.id)}
-              onClick={() => store.toggleCompare(p.id)}
-            >
-              <GitCompareArrows size={17} /> Compare
             </button>
           </div>
           <div className="detail-perks">

@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Countdown, Newsletter, Collections } from './home-interactions';
 import { ProductCard } from './product-card';
+import { DeferredContent } from './deferred-content';
 import { categories, money, type ShopProduct } from '@/lib/catalog-shared';
 const categoryIcons = [Smartphone, Headphones, Watch, Zap, Shield];
 export function SectionTitle({
@@ -38,7 +39,7 @@ export function SectionTitle({
         <span className="eyebrow">{eyebrow}</span>
         <h2>{title}</h2>
       </div>
-      <Link href={link}>
+      <Link prefetch={false} href={link}>
         {linkText}
         <ArrowUpRight size={17} />
       </Link>
@@ -71,10 +72,10 @@ export function Home({
             <br className="desktop-break" /> and prices that make your next upgrade feel right.
           </p>
           <div className="hero-buttons">
-            <Link href="/shop" className="button">
+            <Link prefetch={false} href="/shop" className="button">
               Find your next phone <ArrowUpRight size={17} />
             </Link>
-            <Link href="/shop?offers=true" className="button button-outline">
+            <Link prefetch={false} href="/shop?offers=true" className="button button-outline">
               Explore offers <ArrowRight size={16} />
             </Link>
           </div>
@@ -183,6 +184,7 @@ export function Home({
               const Icon = categoryIcons[i];
               return (
                 <Link
+                  prefetch={false}
                   href={`/shop?category=${encodeURIComponent(c)}`}
                   key={c}
                   className={`category-tile category-${i}`}
@@ -217,31 +219,33 @@ export function Home({
             <strong>All in one place.</strong>
           </div>
           <div className="brand-logos">
-            <Link href="/shop?brand=Apple" className="apple-brand">
+            <Link prefetch={false} href="/shop?brand=Apple" className="apple-brand">
               <span>●</span> Apple
             </Link>
-            <Link href="/shop?brand=Samsung" className="samsung-brand">
+            <Link prefetch={false} href="/shop?brand=Samsung" className="samsung-brand">
               SAMSUNG
             </Link>
-            <Link href="/shop?brand=Google" className="google-brand">
+            <Link prefetch={false} href="/shop?brand=Google" className="google-brand">
               Google
             </Link>
-            <Link href="/shop?brand=OnePlus" className="oneplus-brand">
+            <Link prefetch={false} href="/shop?brand=OnePlus" className="oneplus-brand">
               1+ OnePlus
             </Link>
-            <Link href="/shop?brand=Anker" className="anker-brand">
+            <Link prefetch={false} href="/shop?brand=Anker" className="anker-brand">
               ANKER
             </Link>
           </div>
         </section>
         <section className="collection-section">
           <SectionTitle eyebrow="HANDPICKED. HARD TO RESIST." title="Meet your next upgrade." />
-          <Suspense fallback={<div className="skeleton" style={{ height: 400 }} />}>
-            <Collections products={products} />
-          </Suspense>
+          <DeferredContent>
+            <Suspense fallback={<div className="skeleton" style={{ height: 400 }} />}>
+              <Collections products={products} />
+            </Suspense>
+          </DeferredContent>
         </section>
         <section className="promo-grid">
-          <Link href="/shop?brand=Samsung" className="promo-card promo-samsung">
+          <Link prefetch={false} href="/shop?brand=Samsung" className="promo-card promo-samsung">
             <div>
               <span className="eyebrow">GALAXY. A WORLD OF POSSIBILITIES.</span>
               <h2>
@@ -264,7 +268,7 @@ export function Home({
               Galaxy
             </span>
           </Link>
-          <Link href="/shop?category=Audio" className="promo-card promo-audio">
+          <Link prefetch={false} href="/shop?category=Audio" className="promo-card promo-audio">
             <div>
               <span className="eyebrow">LESS NOISE. MORE YOU.</span>
               <h2>
@@ -292,13 +296,18 @@ export function Home({
             link="/shop?collection=accessories"
             linkText="Shop accessories"
           />
-          <div className="product-grid">
-            {accessories.slice(0, 4).map((p) => (
-              <Suspense key={p.id} fallback={<div className="skeleton" style={{ height: 360 }} />}>
-                <ProductCard product={p} />
-              </Suspense>
-            ))}
-          </div>
+          <DeferredContent count={Math.min(accessories.length, 4)}>
+            <div className="product-grid">
+              {accessories.slice(0, 4).map((p) => (
+                <Suspense
+                  key={p.id}
+                  fallback={<div className="skeleton" style={{ height: 360 }} />}
+                >
+                  <ProductCard product={p} />
+                </Suspense>
+              ))}
+            </div>
+          </DeferredContent>
         </section>
         <section className="deal-section">
           <div className="deal-image">
@@ -323,7 +332,7 @@ export function Home({
             <Suspense fallback={null}>
               <Countdown />
             </Suspense>
-            <Link href="/products/iphone-16" className="button">
+            <Link prefetch={false} href="/products/iphone-16" className="button">
               Make it yours <ArrowUpRight size={17} />
             </Link>
             <small>Demonstration promotion · Subject to availability</small>
@@ -331,19 +340,23 @@ export function Home({
         </section>
         <section className="featured-section">
           <SectionTitle eyebrow="WORTH A SECOND LOOK" title="Featured favorites." />
-          <div className="product-grid">
-            {products
-              .filter((p) => p.featured)
-              .slice(2, 6)
-              .map((p) => (
-                <Suspense
-                  key={p.id}
-                  fallback={<div className="skeleton" style={{ height: 360 }} />}
-                >
-                  <ProductCard product={p} />
-                </Suspense>
-              ))}
-          </div>
+          <DeferredContent
+            count={Math.min(Math.max(products.filter((p) => p.featured).length - 2, 0), 4)}
+          >
+            <div className="product-grid">
+              {products
+                .filter((p) => p.featured)
+                .slice(2, 6)
+                .map((p) => (
+                  <Suspense
+                    key={p.id}
+                    fallback={<div className="skeleton" style={{ height: 360 }} />}
+                  >
+                    <ProductCard product={p} />
+                  </Suspense>
+                ))}
+            </div>
+          </DeferredContent>
         </section>
         <section className="why-section">
           <div>
@@ -357,7 +370,7 @@ export function Home({
               From finding the right phone to getting it safely into your hands, we make every step
               feel effortless.
             </p>
-            <Link href="/about" className="text-link">
+            <Link prefetch={false} href="/about" className="text-link">
               Get to know Mobile Shop <ArrowUpRight size={16} />
             </Link>
           </div>

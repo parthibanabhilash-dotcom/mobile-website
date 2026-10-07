@@ -1,10 +1,10 @@
 'use client';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Heart, Plus, Star, ArrowUpRight, Check, GitCompareArrows } from 'lucide-react';
+import { Heart, Plus, Star, ArrowUpRight, Check } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { money, type ShopProduct } from '@/lib/catalog-shared';
-import { useStore } from './store-provider';
+import { useShoppingActions as useStore } from './store-provider';
 import { Modal } from './modal';
 export function ProductCard({
   product: p,
@@ -34,7 +34,7 @@ export function ProductCard({
         >
           <Heart size={18} fill={saved ? 'currentColor' : 'none'} />
         </button>
-        <Link href={`/products/${p.slug}`} className="product-image">
+        <Link prefetch={false} href={`/products/${p.slug}`} className="product-image">
           <Image
             src={p.images[0]}
             alt={p.title}
@@ -48,17 +48,10 @@ export function ProductCard({
           <button onClick={() => setQuick(true)}>
             Quick view <ArrowUpRight size={13} />
           </button>
-          <button
-            aria-label={`Compare ${p.title}`}
-            aria-pressed={store.compare.includes(p.id)}
-            onClick={() => store.toggleCompare(p.id)}
-          >
-            <GitCompareArrows size={16} />
-          </button>
         </div>
         <div className="product-info">
           <div className="brand-label">{p.brand}</div>
-          <Link className="product-title" href={`/products/${p.slug}`}>
+          <Link className="product-title" prefetch={false} href={`/products/${p.slug}`}>
             {p.title}
           </Link>
           <p className="variant-label">
@@ -109,6 +102,7 @@ export function ProductCard({
               </button>
               <Link
                 className="text-link"
+                prefetch={false}
                 href={`/products/${p.slug}`}
                 onClick={() => setQuick(false)}
               >

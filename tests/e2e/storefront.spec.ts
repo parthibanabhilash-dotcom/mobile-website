@@ -1,6 +1,26 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-test('storefront browsing, search, wishlist, compare and persistent cart', async ({ page }) => {
+test('homepage product sections become interactive when scrolled into view', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.goto('/');
+  for (const selector of ['.collection-section', '.accessories-section', '.featured-section']) {
+    const section = page.locator(selector);
+    await section.scrollIntoViewIfNeeded();
+    await expect(section.locator('.product-card').first()).toBeVisible();
+  }
+});
+test('contact information is accessible on mobile and compare is removed', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.goto('/contact');
+  await expect(page.getByRole('heading', { name: 'Let’s talk tech.' })).toBeVisible();
+  await expect(page.getByText('Sample address for the preview.', { exact: false })).toBeVisible();
+  await expect(
+    page.locator('.site-footer').getByRole('link', { name: 'Contact us', exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole('link', { name: /Compare/ })).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+test('storefront browsing, search, wishlist and persistent cart', async ({ page }) => {
   await page.goto('/');
   await expect(
     page.getByRole('heading', { name: 'Extraordinary tech. Everyday possibilities.' }),
@@ -12,7 +32,7 @@ test('storefront browsing, search, wishlist, compare and persistent cart', async
   await page.locator('.search-suggestions').getByText('Pixel 9 Pro', { exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Pixel 9 Pro', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Save to wishlist' }).click();
-  await page.getByRole('button', { name: 'Compare', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Compare', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Add to bag', exact: true }).click();
   await page.getByRole('button', { name: /Open cart, 1 items/ }).click();
   await expect(page.getByRole('dialog').getByText('Pixel 9 Pro', { exact: true })).toBeVisible();
@@ -22,7 +42,7 @@ test('storefront browsing, search, wishlist, compare and persistent cart', async
   await page.goto('/wishlist');
   await expect(page.getByText('Pixel 9 Pro', { exact: true })).toBeVisible();
   await page.goto('/compare');
-  await expect(page.locator('table').getByText('Pixel 9 Pro', { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/shop$/);
   await page.goto('/checkout');
   await expect(page.getByRole('heading', { name: 'Good to see you again.' })).toBeVisible();
 });

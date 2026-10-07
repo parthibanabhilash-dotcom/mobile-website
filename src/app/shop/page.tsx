@@ -1,8 +1,9 @@
 import { Suspense } from 'react';
 import { Shop } from '@/components/shop';
 import { queryCatalog } from '@/lib/catalog-query';
+import Loading from '../loading';
 export const metadata = { title: 'Shop the collection' };
-export default async function Page({
+async function CatalogContent({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -15,6 +16,15 @@ export default async function Page({
   return (
     <Suspense>
       <Shop initial={initial} />
+    </Suspense>
+  );
+}
+export default function Page(props: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  return (
+    <Suspense fallback={<Loading />}>
+      <CatalogContent {...props} />
     </Suspense>
   );
 }

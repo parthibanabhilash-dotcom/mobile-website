@@ -24,20 +24,24 @@ type Store = {
   settings: StoreSettings;
   cart: CartEntry[];
   wishlist: string[];
-  compare: string[];
   user: Customer | null;
   cartOpen: boolean;
   setCartOpen: (open: boolean) => void;
   add: (variantId: string, quantity?: number) => boolean;
   quantity: (id: string, q: number) => void;
   wish: (id: string) => void;
-  toggleCompare: (id: string) => void;
   notify: (text: string) => void;
   refreshUser: () => Promise<void>;
   logout: () => Promise<void>;
   clearCart: () => void;
 };
 const Context = createContext<Store | null>(null);
+const ShoppingContext = createContext<Omit<Store, 'products'> | null>(null);
+export function useShoppingActions() {
+  const store = useContext(ShoppingContext);
+  if (!store) throw new Error('Shopping provider is missing');
+  return store;
+}
 const ReadyContext = createContext(false);
 export const useStoreReady = () => useContext(ReadyContext);
 export async function api<T = any>(path: string, body?: unknown, method?: string): Promise<T> {
@@ -65,7 +69,6 @@ export function StoreProvider({
     });
   const [cart, setCart] = useState<CartEntry[]>([]),
     [wishlist, setWishlist] = useState<string[]>([]),
-    [compare, setCompare] = useState<string[]>([]),
     [user, setUser] = useState<Customer | null>(null),
     [ready, setReady] = useState(false),
     [cartOpen, setCartOpen] = useState(false),
@@ -86,7 +89,7 @@ export function StoreProvider({
     const map = new Map(productsRef.current.map((p) => [p.id, p]));
     let changed = false;
     for (const p of incoming)
-      if (map.get(p.id) !== p) {
+      if (map.get(p.id) !== p && JSON.stringify(map.get(p.id)) !== JSON.stringify(p)) {
         map.set(p.id, p);
         changed = true;
       }
@@ -146,7 +149,7 @@ export function StoreProvider({
   useEffect(() => {
     let alive = true;
     async function init() {
-      let saved: { cart?: CartEntry[]; wishlist?: string[]; compare?: string[] } = {};
+      let saved: { cart?: CartEntry[]; wishlist?: string[] } = {};
       try {
         saved = JSON.parse(localStorage.getItem('mobile-shop') || '{}');
       } catch {}
@@ -161,26 +164,21 @@ export function StoreProvider({
           .slice(0, 50),
         wishes = (Array.isArray(saved.wishlist) ? saved.wishlist : [])
           .filter((id) => typeof id === 'string')
-          .slice(0, 200),
-        comparisons = (Array.isArray(saved.compare) ? saved.compare : [])
-          .filter((id) => typeof id === 'string')
-          .slice(0, 4);
+          .slice(0, 200);
       if (valid.length) setCart(valid);
       cartRef.current = valid;
       if (wishes.length) setWishlist(wishes);
       wishRef.current = wishes;
-      if (comparisons.length) setCompare(comparisons);
       setReady(true);
-      try {
-        if (valid.length || wishes.length || comparisons.length) {
+      const loadSavedProducts = async () => {
+        if (valid.length || wishes.length) {
           const lookup = await api<{ products: ShopProduct[] }>(
-            `catalog/lookup?variants=${encodeURIComponent(valid.map((v) => v.variantId).join(','))}&products=${encodeURIComponent([...wishes, ...comparisons].join(','))}`,
+            `catalog/lookup?variants=${encodeURIComponent(valid.map((v) => v.variantId).join(','))}&products=${encodeURIComponent(wishes.join(','))}`,
           );
           if (alive) registerProducts(lookup.products);
         }
-        await refreshUser();
-      } catch {}
-      try {
+      };
+      const loadSettings = async () => {
         const config = await api<StoreSettings>('settings');
         if (alive)
           setSettings((old) =>
@@ -190,7 +188,8 @@ export function StoreProvider({
               ? old
               : config,
           );
-      } catch {}
+      };
+      await Promise.allSettled([loadSavedProducts(), refreshUser(), loadSettings()]);
       if (alive) setReady(true);
     }
     init();
@@ -200,8 +199,8 @@ export function StoreProvider({
     };
   }, [refreshUser, registerProducts]);
   useEffect(() => {
-    if (ready) localStorage.setItem('mobile-shop', JSON.stringify({ cart, wishlist, compare }));
-  }, [cart, wishlist, compare, ready]);
+    if (ready) localStorage.setItem('mobile-shop', JSON.stringify({ cart, wishlist }));
+  }, [cart, wishlist, ready]);
   function persist(next: CartEntry[]) {
     setCart(next);
     cartRef.current = next;
@@ -280,18 +279,6 @@ export function StoreProvider({
       });
     notify(saved ? 'Saved to your wishlist' : 'Removed from your wishlist');
   }
-  function toggleCompare(id: string) {
-    if (compare.includes(id)) {
-      setCompare(compare.filter((p) => p !== id));
-      return;
-    }
-    if (compare.length === 4) {
-      notify('Compare up to four products at a time.');
-      return;
-    }
-    setCompare([...compare, id]);
-    notify('Added to compare');
-  }
   async function logout() {
     await queue.current;
     await api('auth/logout', {});
@@ -304,21 +291,18 @@ export function StoreProvider({
     sessionStorage.removeItem('mobile-checkout-key');
     notify('You’ve signed out');
   }
-  const value = useMemo(
+  const shopping = useMemo(
     () => ({
-      products,
       registerProducts,
       settings,
       cart,
       wishlist,
-      compare,
       user,
       cartOpen,
       setCartOpen,
       add,
       quantity,
       wish,
-      toggleCompare,
       notify,
       refreshUser,
       logout,
@@ -327,28 +311,20 @@ export function StoreProvider({
         cartRef.current = [];
       },
     }),
-    [
-      products,
-      registerProducts,
-      settings,
-      cart,
-      wishlist,
-      compare,
-      user,
-      cartOpen,
-      notify,
-      refreshUser,
-    ],
+    [registerProducts, settings, cart, wishlist, user, cartOpen, notify, refreshUser],
   );
+  const value = useMemo(() => ({ ...shopping, products }), [shopping, products]);
   return (
     <ReadyContext.Provider value={ready}>
-      <Context.Provider value={value}>
-        {children}
-        <div className={`toast ${toast ? 'show' : ''}`} role="status" aria-live="polite">
-          <span className="toast-check">✓</span>
-          {toast}
-        </div>
-      </Context.Provider>
+      <ShoppingContext.Provider value={shopping}>
+        <Context.Provider value={value}>
+          {children}
+          <div className={`toast ${toast ? 'show' : ''}`} role="status" aria-live="polite">
+            <span className="toast-check">✓</span>
+            {toast}
+          </div>
+        </Context.Provider>
+      </ShoppingContext.Provider>
     </ReadyContext.Provider>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { ArrowRight } from 'lucide-react';
-import { useStore, api } from './store-provider';
+import { useShoppingActions as useStore, api } from './store-provider';
 import { ProductCard } from './product-card';
 import type { ShopProduct } from '@/lib/catalog-shared';
 export function Countdown() {

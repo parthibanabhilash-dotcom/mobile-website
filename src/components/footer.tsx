@@ -12,37 +12,71 @@ export function Footer() {
             <br />A better way to shop.
           </p>
           <div className="footer-social">
-            <a href="mailto:support@mobile-shop.local" aria-label="Email support">
+            <a href="mailto:parthibanabhilash@gmail.com" aria-label="Email support">
               <Mail size={17} />
             </a>
-            <Link href="/about" aria-label="About our store">
+            <Link prefetch={false} href="/about" aria-label="About our store">
               <ArrowUpRight size={17} />
             </Link>
           </div>
         </div>
         <div>
           <h2>Explore</h2>
-          <Link href="/shop?category=Smartphones">Smartphones</Link>
-          <Link href="/shop?collection=accessories">Accessories</Link>
-          <Link href="/shop?collection=new">New arrivals</Link>
-          <Link href="/shop?offers=true">Special offers</Link>
-          <Link href="/compare">Compare products</Link>
+          <Link prefetch={false} href="/shop?category=Smartphones">
+            Smartphones
+          </Link>
+          <Link prefetch={false} href="/shop?collection=accessories">
+            Accessories
+          </Link>
+          <Link prefetch={false} href="/shop?collection=new">
+            New arrivals
+          </Link>
+          <Link prefetch={false} href="/shop?offers=true">
+            Special offers
+          </Link>
         </div>
         <div>
           <h2>Here to help</h2>
-          <Link href="/help">Help & support</Link>
-          <Link href="/help#shipping">Shipping & delivery</Link>
-          <Link href="/help#returns">Returns & warranty</Link>
-          <Link href="/account?tab=orders">Track your order</Link>
-          <Link href="/help#contact">Contact us</Link>
+          <Link prefetch={false} href="/help">
+            Help & support
+          </Link>
+          <Link prefetch={false} href="/help#shipping">
+            Shipping & delivery
+          </Link>
+          <Link prefetch={false} href="/help#returns">
+            Returns & warranty
+          </Link>
+          <Link prefetch={false} href="/account?tab=orders">
+            Track your order
+          </Link>
+          <Link prefetch={false} href="/contact">
+            Contact us
+          </Link>
         </div>
         <div>
+          <h2>Contact</h2>
+          <p>Sample address: 24, Anna Salai, Chennai, Tamil Nadu 600002.</p>
+          <p>Mon–Sat, 10 AM–7 PM IST</p>
+          <a href="mailto:parthibanabhilash@gmail.com">parthibanabhilash@gmail.com</a>
+          <Link prefetch={false} href="/contact">
+            Contact details
+          </Link>
           <h2>Mobile Shop</h2>
-          <Link href="/about">Our story</Link>
-          <Link href="/privacy">Privacy policy</Link>
-          <Link href="/terms">Terms & conditions</Link>
-          <Link href="/account">My account</Link>
-          <Link href="/admin">Admin portal</Link>
+          <Link prefetch={false} href="/about">
+            Our story
+          </Link>
+          <Link prefetch={false} href="/privacy">
+            Privacy policy
+          </Link>
+          <Link prefetch={false} href="/terms">
+            Terms & conditions
+          </Link>
+          <Link prefetch={false} href="/account">
+            My account
+          </Link>
+          <Link prefetch={false} href="/admin">
+            Admin portal
+          </Link>
         </div>
         <div className="footer-assurance">
           <ShieldCheck size={27} />

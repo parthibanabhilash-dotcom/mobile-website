@@ -64,7 +64,7 @@ export function AdminProducts() {
           <Plus size={17} /> Add product
         </Link>
       </div>
-      <div className="panel">
+      <div className="panel" id="product-section-0">
         <div className="admin-filters">
           <label className="input-with-icon">
             <Search size={17} />
@@ -260,7 +260,24 @@ export function ProductEditor({ id }: { id?: string }) {
     }));
   }
   async function uploadFiles(files: FileList | File[]) {
+    const selected = Array.from(files);
+    if (!selected.length) return;
+    if (selected.length + draft.images.length > 10) {
+      setError('Maximum 10 images. Remove an image before uploading more.');
+      return;
+    }
+    if (
+      selected.some(
+        (file) =>
+          !['image/png', 'image/jpeg', 'image/webp'].includes(file.type) ||
+          file.size > 5 * 1024 * 1024,
+      )
+    ) {
+      setError('Choose PNG, JPEG or WebP files up to 5 MB each.');
+      return;
+    }
     setError('');
+    setUpload(0);
     setUploading(true);
     let urls: string[] = [];
     try {
@@ -286,8 +303,8 @@ export function ProductEditor({ id }: { id?: string }) {
           xhr.send(form);
         });
         urls.push(url);
+        setDraft((d) => ({ ...d, images: [...d.images, url] }));
       }
-      setDraft((d) => ({ ...d, images: [...d.images, ...urls].slice(0, 10) }));
       store.notify('Images uploaded');
     } catch (e) {
       setError((e as Error).message);
@@ -302,6 +319,18 @@ export function ProductEditor({ id }: { id?: string }) {
     setBusy(true);
     setError('');
     try {
+      const skus = draft.variants.map((v) => v.sku?.trim().toLowerCase());
+      if (new Set(skus).size !== skus.length) throw new Error('Each variant needs a unique SKU.');
+      for (const [index, v] of draft.variants.entries()) {
+        if (!v.price || !v.originalPrice || v.originalPrice < v.price)
+          throw new Error(`Variant ${index + 1}: original price must be at least the offer price.`);
+        if (!Number.isInteger(v.stock) || (v.stock || 0) < (v.reserved || 0))
+          throw new Error(
+            `Variant ${index + 1}: stock must be a whole number covering reserved units.`,
+          );
+      }
+      if (draft.status === 'ACTIVE' && !draft.images.length)
+        throw new Error('Add at least one product image before publishing.');
       const specifications = Object.fromEntries(
         specs
           .split('\n')
@@ -331,17 +360,51 @@ export function ProductEditor({ id }: { id?: string }) {
       </Link>
       <div className="dashboard-heading">
         <div>
-          <h1>{id ? 'Edit product' : 'Add a new favorite'}</h1>
+          <h1>{id ? 'Edit product' : 'Add product'}</h1>
           <p>A clear, complete product page makes all the difference.</p>
         </div>
       </div>
       <form className="product-editor" onSubmit={save}>
+        <div className="editor-summary panel">
+          <div>
+            <span className="eyebrow">PRODUCT PREVIEW</span>
+            <h2>{draft.title || 'Your new product'}</h2>
+            <p>
+              {draft.brand} · {draft.category} · {draft.status}
+            </p>
+          </div>
+          <div>
+            <strong>{money(Math.min(...draft.variants.map((v) => v.price || 0)))}</strong>
+            <p>
+              {draft.variants.length} variants ·{' '}
+              {draft.variants.reduce(
+                (sum, v) => sum + Math.max(0, (v.stock || 0) - (v.reserved || 0)),
+                0,
+              )}{' '}
+              available · {draft.images.length}/10 images
+            </p>
+          </div>
+        </div>
+        <nav className="editor-sections" aria-label="Product form sections">
+          {[
+            'Basic information',
+            'Pricing & inventory',
+            'Specifications & warranty',
+            'Images',
+            'SEO',
+            'Status & merchandising',
+          ].map((name, index) => (
+            <a key={name} href={`#product-section-${index}`}>
+              {name}
+            </a>
+          ))}
+        </nav>
         {error && (
           <p className="form-error" role="alert">
             {error}
           </p>
         )}
-        <div className="panel">
+        <div className="panel" id="product-section-0">
           <h2>Basic information</h2>
           <div className="form-grid">
             <label className="field">
@@ -376,6 +439,7 @@ export function ProductEditor({ id }: { id?: string }) {
               <input
                 required
                 list="brand-list"
+                aria-label="Brand"
                 value={draft.brand}
                 onChange={(e) => update('brand', e.target.value)}
               />
@@ -390,8 +454,16 @@ export function ProductEditor({ id }: { id?: string }) {
               <input
                 required
                 list="category-list"
+                aria-label="Category"
                 value={draft.category}
-                onChange={(e) => update('category', e.target.value)}
+                onChange={(e) => {
+                  update('category', e.target.value);
+                  if (!id && e.target.value !== 'Smartphones')
+                    update(
+                      'variants',
+                      draft.variants.map((v) => ({ ...v, ram: 'N/A', storage: 'N/A' })),
+                    );
+                }}
               />
               <datalist id="category-list">
                 {categories.map((c) => (
@@ -414,7 +486,7 @@ export function ProductEditor({ id }: { id?: string }) {
             </label>
           </div>
         </div>
-        <div className="panel">
+        <div className="panel" id="product-section-1">
           <div className="panel-heading">
             <div>
               <h2>Pricing & inventory</h2>
@@ -513,7 +585,7 @@ export function ProductEditor({ id }: { id?: string }) {
             </div>
           ))}
         </div>
-        <div className="panel">
+        <div className="panel" id="product-section-2">
           <h2>Specifications & warranty</h2>
           <div className="form-grid">
             <label className="field">
@@ -524,6 +596,7 @@ export function ProductEditor({ id }: { id?: string }) {
               Warranty
               <textarea
                 required
+                maxLength={2000}
                 value={draft.warranty}
                 onChange={(e) => update('warranty', e.target.value)}
                 rows={6}
@@ -531,7 +604,7 @@ export function ProductEditor({ id }: { id?: string }) {
             </label>
           </div>
         </div>
-        <div className="panel">
+        <div className="panel" id="product-section-3">
           <h2>Images</h2>
           <label
             className="upload-zone"
@@ -547,7 +620,7 @@ export function ProductEditor({ id }: { id?: string }) {
             </strong>
             <span>PNG, JPEG, or WebP · Up to 5 MB each · Maximum 10 images</span>
             <input
-              className="sr-only"
+              className="upload-input"
               type="file"
               accept="image/png,image/jpeg,image/webp"
               multiple
@@ -585,11 +658,23 @@ export function ProductEditor({ id }: { id?: string }) {
                   <X size={14} />
                 </button>
                 <span>{i === 0 ? 'Cover' : `Image ${i + 1}`}</span>
+                {i > 0 && (
+                  <button
+                    className="cover-button"
+                    type="button"
+                    aria-label={`Set image ${i + 1} as cover`}
+                    onClick={() =>
+                      update('images', [url, ...draft.images.filter((_, n) => n !== i)])
+                    }
+                  >
+                    Set cover
+                  </button>
+                )}
               </div>
             ))}
           </div>
         </div>
-        <div className="panel">
+        <div className="panel" id="product-section-4">
           <h2>SEO</h2>
           <div className="form-grid">
             <label className="field">
@@ -610,7 +695,7 @@ export function ProductEditor({ id }: { id?: string }) {
             </label>
           </div>
         </div>
-        <div className="panel">
+        <div className="panel" id="product-section-5">
           <h2>Status & merchandising</h2>
           <div className="form-grid">
             <label className="field">

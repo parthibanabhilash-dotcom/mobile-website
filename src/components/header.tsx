@@ -9,7 +9,6 @@ import {
   Menu,
   X,
   ChevronDown,
-  GitCompareArrows,
   ArrowUpRight,
   Smartphone,
   Truck,
@@ -17,14 +16,14 @@ import {
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useStore, api } from './store-provider';
+import { useShoppingActions as useStore, api } from './store-provider';
 import { categories, money, type ShopProduct } from '@/lib/catalog-shared';
 import { Modal } from './modal';
 import dynamic from 'next/dynamic';
 const CartDrawer = dynamic(() => import('./cart').then((m) => m.CartDrawer), { ssr: false });
 export function Logo() {
   return (
-    <Link href="/" className="logo" aria-label="Mobile Shop home">
+    <Link prefetch={false} href="/" className="logo" aria-label="Mobile Shop home">
       <span className="logo-mark">
         <Smartphone size={21} />
         <i />
@@ -42,6 +41,8 @@ export function Header() {
     [query, setQuery] = useState(''),
     [results, setResults] = useState<ShopProduct[]>([]),
     [searchOpen, setSearchOpen] = useState(false),
+    [searchLoading, setSearchLoading] = useState(false),
+    [searchError, setSearchError] = useState(''),
     [accountOpen, setAccountOpen] = useState(false),
     [categoryOpen, setCategoryOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
@@ -54,28 +55,39 @@ export function Header() {
   useEffect(() => {
     if (!query.trim()) {
       setResults([]);
+      setSearchLoading(false);
+      setSearchError('');
       return;
     }
     let cancelled = false;
+    const controller = new AbortController();
+    setResults([]);
+    setSearchLoading(true);
+    setSearchError('');
     const timer = setTimeout(() => {
-      api<{ products: ShopProduct[] }>(`catalog?q=${encodeURIComponent(query)}`)
+      fetch(`/api/catalog?q=${encodeURIComponent(query.trim())}&suggest=true`, {
+        signal: controller.signal,
+      })
+        .then(async (response) => {
+          if (!response.ok) throw new Error('Search unavailable');
+          return response.json() as Promise<{ products: ShopProduct[] }>;
+        })
         .then((data) => {
           if (!cancelled) setResults(data.products.slice(0, 5));
         })
         .catch(() => {
-          if (!cancelled)
-            setResults(
-              store.products
-                .filter((p) => `${p.title} ${p.brand}`.toLowerCase().includes(query.toLowerCase()))
-                .slice(0, 5),
-            );
+          if (!cancelled) setSearchError('Search is unavailable. Please try again.');
+        })
+        .finally(() => {
+          if (!cancelled) setSearchLoading(false);
         });
     }, 250);
     return () => {
       cancelled = true;
+      controller.abort();
       clearTimeout(timer);
     };
-  }, [query, store.products]);
+  }, [query]);
   useEffect(() => {
     function shortcut(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -105,7 +117,7 @@ export function Header() {
           </span>
           <span>
             Big on innovation. Better on price.{' '}
-            <Link href="/shop?offers=true">
+            <Link prefetch={false} href="/shop?offers=true">
               Explore offers <ArrowRight size={12} />
             </Link>
           </span>
@@ -139,6 +151,7 @@ export function Header() {
               <div className="nav-dropdown">
                 {categories.map((c) => (
                   <Link
+                    prefetch={false}
                     key={c}
                     href={`/shop?category=${encodeURIComponent(c)}`}
                     onClick={() => setCategoryOpen(false)}
@@ -151,7 +164,15 @@ export function Header() {
             )}
           </div>
           <div className="search-wrap" ref={searchRef}>
-            <form className="search-form" action="/shop" onSubmit={() => setSearchOpen(false)}>
+            <form
+              className="search-form"
+              action="/shop"
+              onSubmit={(e) => {
+                e.preventDefault();
+                router.push(`/shop?q=${encodeURIComponent(query.trim())}`);
+                setSearchOpen(false);
+              }}
+            >
               <Search size={18} />
               <input
                 name="q"
@@ -180,6 +201,7 @@ export function Header() {
                 <div className="suggestion-heading">Products for “{query}”</div>
                 {results.map((p) => (
                   <Link
+                    prefetch={false}
                     key={p.id}
                     href={`/products/${p.slug}`}
                     onClick={() => {
@@ -197,7 +219,11 @@ export function Header() {
                     <b>{money(p.variants[0].price)}</b>
                   </Link>
                 ))}
-                {!results.length && <p>No matches yet. Try another name or brand.</p>}
+                {searchLoading && <p role="status">Searching products…</p>}
+                {searchError && <p role="alert">{searchError}</p>}
+                {!searchLoading && !searchError && !results.length && (
+                  <p>No matches. Try a product, brand or category.</p>
+                )}
                 <button
                   onClick={() => {
                     router.push(`/shop?q=${encodeURIComponent(query)}`);
@@ -209,16 +235,9 @@ export function Header() {
               </div>
             )}
           </div>
-          <Link href="/shop?offers=true" className="header-offers">
+          <Link prefetch={false} href="/shop?offers=true" className="header-offers">
             Offers
             <span />
-          </Link>
-          <Link
-            href="/compare"
-            className="icon-button compare-header"
-            aria-label={`Compare ${store.compare.length} products`}
-          >
-            <GitCompareArrows size={21} />
           </Link>
           <div
             className="account-control"
@@ -239,13 +258,21 @@ export function Header() {
                 <strong>
                   {store.user ? `Hi, ${store.user.name.split(' ')[0]}` : 'Welcome to Mobile Shop'}
                 </strong>
-                <Link href="/account" onClick={() => setAccountOpen(false)}>
+                <Link prefetch={false} href="/account" onClick={() => setAccountOpen(false)}>
                   {store.user ? 'My account' : 'Sign in / Register'}
                 </Link>
-                <Link href="/account?tab=orders" onClick={() => setAccountOpen(false)}>
+                <Link
+                  prefetch={false}
+                  href="/account?tab=orders"
+                  onClick={() => setAccountOpen(false)}
+                >
                   My orders
                 </Link>
-                {store.user?.role === 'ADMIN' && <Link href="/admin">Admin dashboard</Link>}
+                {store.user?.role === 'ADMIN' && (
+                  <Link prefetch={false} href="/admin">
+                    Admin dashboard
+                  </Link>
+                )}
                 {store.user && (
                   <button
                     onClick={() => {
@@ -260,6 +287,7 @@ export function Header() {
             )}
           </div>
           <Link
+            prefetch={false}
             href="/wishlist"
             className="icon-button header-wish"
             aria-label={`Wishlist, ${store.wishlist.length} items`}
@@ -277,30 +305,31 @@ export function Header() {
           </button>
         </div>
         <nav className="category-nav container" aria-label="Product categories">
-          <Link href="/shop" className="active">
+          <Link prefetch={false} href="/shop" className="active">
             All products
           </Link>
           {categories.map((c) => (
-            <Link key={c} href={`/shop?category=${encodeURIComponent(c)}`}>
+            <Link prefetch={false} key={c} href={`/shop?category=${encodeURIComponent(c)}`}>
               {c}
             </Link>
           ))}
           <span className="nav-divider" />
-          <Link href="/shop?collection=new">
+          <Link prefetch={false} href="/shop?collection=new">
             New arrivals <span className="new-dot" />
           </Link>
-          <Link href="/shop?offers=true" className="nav-deals">
+          <Link prefetch={false} href="/shop?offers=true" className="nav-deals">
             Weekly deals <ArrowUpRight size={13} />
           </Link>
         </nav>
       </header>
       <Modal open={mobile} onClose={() => setMobile(false)} title="Explore Mobile Shop" drawer>
         <nav className="mobile-nav">
-          <Link href="/shop" onClick={() => setMobile(false)}>
+          <Link prefetch={false} href="/shop" onClick={() => setMobile(false)}>
             Shop all <ArrowRight size={18} />
           </Link>
           {categories.map((c) => (
             <Link
+              prefetch={false}
               key={c}
               href={`/shop?category=${encodeURIComponent(c)}`}
               onClick={() => setMobile(false)}
@@ -309,16 +338,13 @@ export function Header() {
               <ArrowRight size={18} />
             </Link>
           ))}
-          <Link href="/shop?offers=true" onClick={() => setMobile(false)}>
+          <Link prefetch={false} href="/shop?offers=true" onClick={() => setMobile(false)}>
             Special offers
           </Link>
-          <Link href="/wishlist" onClick={() => setMobile(false)}>
+          <Link prefetch={false} href="/wishlist" onClick={() => setMobile(false)}>
             Wishlist
           </Link>
-          <Link href="/compare" onClick={() => setMobile(false)}>
-            Compare products
-          </Link>
-          <Link href="/account" onClick={() => setMobile(false)}>
+          <Link prefetch={false} href="/account" onClick={() => setMobile(false)}>
             My account
           </Link>
         </nav>
